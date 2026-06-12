@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toufiqur Rahman — GIS & Geospatial Analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1412;
+    --panel:#152019;
+    --panel-2:#1b2922;
+    --ink:#eef3ec;
+    --muted:#94aaa1;
+    --line:#2a3a32;
+    --amber:#d9a544;
+    --teal:#5fb3a3;
+    --font-display:'Space Grotesk', sans-serif;
+    --font-body:'IBM Plex Sans', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    line-height:1.6;
+    font-weight:300;
+  }
+  /* contour background pattern */
+  .contours{
+    position:fixed;inset:0;z-index:-1;opacity:.18;pointer-events:none;
+    background-image:
+      repeating-radial-gradient(circle at 18% 28%, transparent 0 38px, var(--line) 39px 40px, transparent 41px 78px),
+      repeating-radial-gradient(circle at 85% 75%, transparent 0 50px, var(--line) 51px 52px, transparent 53px 102px);
+  }
+  a{color:var(--amber); text-decoration:none;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+    color:var(--teal);
+    display:flex;align-items:center;gap:.6em;
+    margin-bottom:1.1rem;
+  }
+  .eyebrow::before{content:"";display:inline-block;width:22px;height:1px;background:var(--teal);}
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;letter-spacing:-0.01em;}
+  section{padding:5.5rem 1.5rem;max-width:1080px;margin:0 auto;}
+  .section-title{font-size:clamp(1.7rem,4vw,2.4rem);margin-bottom:2.5rem;color:var(--ink);}
+  .section-title span{color:var(--amber);}
+
+  /* NAV */
+  nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:blur(10px);
+    background:rgba(13,20,18,.85);
+    border-bottom:1px solid var(--line);
+    padding:.9rem 1.5rem;
+    display:flex;justify-content:space-between;align-items:center;
+    font-family:var(--font-mono);font-size:.78rem;letter-spacing:.05em;
+  }
+  nav .brand{font-family:var(--font-display);font-weight:700;font-size:1.05rem;color:var(--ink);}
+  nav .brand span{color:var(--amber);}
+  nav ul{display:flex;gap:1.6rem;list-style:none;flex-wrap:wrap;}
+  nav ul li a{color:var(--muted);text-transform:uppercase;transition:color .2s;}
+  nav ul li a:hover{color:var(--amber);}
+  @media (max-width:760px){ nav ul{display:none;} }
+
+  /* HERO */
+  .hero{
+    min-height:90vh;display:flex;flex-direction:column;justify-content:center;
+    max-width:1080px;margin:0 auto;padding:4rem 1.5rem;position:relative;
+  }
+  .hero .coords{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);margin-bottom:2rem;letter-spacing:.05em;}
+  .hero-grid{display:grid;grid-template-columns:1.4fr .9fr;gap:3rem;align-items:center;}
+  @media (max-width:760px){.hero-grid{grid-template-columns:1fr;}}
+  .hero h1{font-size:clamp(2.4rem,7vw,4.4rem);line-height:1.05;margin-bottom:1rem;}
+  .hero h1 .accent{color:var(--amber);}
+  .hero .role{font-family:var(--font-mono);color:var(--teal);font-size:1rem;letter-spacing:.08em;margin-bottom:1.6rem;text-transform:uppercase;}
+  .hero p.lead{color:var(--muted);max-width:46ch;margin-bottom:2.2rem;font-size:1.02rem;}
+  .cta-row{display:flex;gap:1rem;flex-wrap:wrap;}
+  .btn{
+    font-family:var(--font-mono);font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;
+    padding:.85rem 1.5rem;border:1px solid var(--line);border-radius:2px;
+    transition:.2s; color:var(--ink); display:inline-flex; align-items:center; gap:.5rem;
+  }
+  .btn.primary{background:var(--amber);color:#16201a;border-color:var(--amber);font-weight:500;}
+  .btn:hover{border-color:var(--amber);color:var(--amber);}
+  .btn.primary:hover{background:transparent;color:var(--amber);}
+
+  .photo-frame{
+    border:1px solid var(--line); position:relative; aspect-ratio:4/5;
+    background:var(--panel); overflow:hidden;
+  }
+  .photo-frame img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(15%) contrast(1.05);}
+  .photo-frame .tag{
+    position:absolute;bottom:0;left:0;right:0;
+    font-family:var(--font-mono);font-size:.7rem;letter-spacing:.1em;
+    background:rgba(13,20,18,.75);color:var(--teal);padding:.5rem .8rem;text-transform:uppercase;
+    border-top:1px solid var(--line);
+  }
+  .photo-frame .crosshair{
+    position:absolute;top:.7rem;right:.7rem;width:18px;height:18px;
+    border:1px solid var(--amber);border-radius:50%;
+  }
+  .photo-frame .crosshair::before,.photo-frame .crosshair::after{
+    content:"";position:absolute;background:var(--amber);
+  }
+  .photo-frame .crosshair::before{top:50%;left:-4px;right:-4px;height:1px;}
+  .photo-frame .crosshair::after{left:50%;top:-4px;bottom:-4px;width:1px;}
+
+  /* stats strip */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:3rem;}
+  @media (max-width:700px){.stats{grid-template-columns:repeat(2,1fr);}}
+  .stat{background:var(--bg);padding:1.5rem 1.2rem;}
+  .stat .num{font-family:var(--font-display);font-size:1.9rem;color:var(--amber);}
+  .stat .lbl{font-family:var(--font-mono);font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:.3rem;}
+
+  /* ABOUT */
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
+  @media (max-width:760px){.about-grid{grid-template-columns:1fr;}}
+  .about-grid p{color:var(--muted);margin-bottom:1.1rem;}
+  .about-grid p strong{color:var(--ink);font-weight:500;}
+  blockquote{
+    font-family:var(--font-display);font-size:1.25rem;color:var(--ink);
+    border-left:2px solid var(--amber);padding-left:1.3rem;margin-top:1.5rem;font-weight:500;
+  }
+
+  /* SKILLS — map legend style */
+  .legend{border:1px solid var(--line);background:var(--panel);}
+  .legend-row{display:flex;align-items:flex-start;gap:1rem;padding:1.3rem 1.5rem;border-bottom:1px solid var(--line);}
+  .legend-row:last-child{border-bottom:none;}
+  .legend-swatch{
+    width:14px;height:14px;margin-top:.35rem;flex-shrink:0;border:1px solid var(--line);
+  }
+  .legend-row h4{font-size:1.02rem;margin-bottom:.4rem;}
+  .legend-row p{color:var(--muted);font-size:.92rem;}
+  .legend-row .tools{font-family:var(--font-mono);font-size:.72rem;color:var(--teal);margin-top:.5rem;letter-spacing:.03em;}
+
+  /* EXPERIENCE TIMELINE */
+  .timeline{border-left:1px solid var(--line);padding-left:2rem;position:relative;}
+  .tl-item{margin-bottom:2.8rem;position:relative;}
+  .tl-item::before{
+    content:"";position:absolute;left:-2.45rem;top:.35rem;width:9px;height:9px;
+    background:var(--amber);border-radius:50%;
+  }
+  .tl-item .when{font-family:var(--font-mono);font-size:.75rem;color:var(--teal);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem;}
+  .tl-item h3{font-size:1.15rem;margin-bottom:.15rem;}
+  .tl-item .org{color:var(--muted);font-size:.92rem;margin-bottom:.7rem;font-style:italic;}
+  .tl-item ul{padding-left:1.1rem;color:var(--muted);font-size:.93rem;}
+  .tl-item li{margin-bottom:.4rem;}
+
+  /* GALLERY */
+  /* SLIDER */
+  .slider{
+    position:relative; border:1px solid var(--line); background:var(--panel);
+    aspect-ratio:16/9; overflow:hidden; max-width:100%;
+  }
+  .slider-track{
+    display:flex; height:100%; transition:transform .6s cubic-bezier(.65,0,.35,1);
+  }
+  .slide{flex:0 0 100%; position:relative; height:100%;}
+  .slide img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;}
+  .slide .cap{
+    position:absolute;bottom:0;left:0;right:0;padding:.8rem 1.2rem;
+    font-family:var(--font-mono);font-size:.72rem;letter-spacing:.08em;
+    background:linear-gradient(transparent,rgba(13,20,18,.9));color:var(--teal);text-transform:uppercase;
+  }
+  .slide .crosshair{
+    position:absolute;top:.8rem;right:.8rem;width:20px;height:20px;
+    border:1px solid var(--amber);border-radius:50%;
+  }
+  .slide .crosshair::before,.slide .crosshair::after{content:"";position:absolute;background:var(--amber);}
+  .slide .crosshair::before{top:50%;left:-4px;right:-4px;height:1px;}
+  .slide .crosshair::after{left:50%;top:-4px;bottom:-4px;width:1px;}
+
+  .slider-arrow{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:5;
+    width:42px;height:42px; border:1px solid var(--line); background:rgba(13,20,18,.7);
+    color:var(--ink); font-family:var(--font-mono); font-size:1.1rem; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:.2s;
+  }
+  .slider-arrow:hover{border-color:var(--amber); color:var(--amber);}
+  .slider-arrow.prev{left:.8rem;} .slider-arrow.next{right:.8rem;}
+
+  .slider-dots{display:flex; gap:.5rem; justify-content:center; margin-top:1rem;}
+  .slider-dots button{
+    width:28px; height:3px; background:var(--line); border:none; cursor:pointer; transition:.2s; padding:0;
+  }
+  .slider-dots button.active{background:var(--amber);}
+
+  .scroll-hint{font-family:var(--font-mono);font-size:.7rem;color:var(--muted);margin-top:.8rem;letter-spacing:.05em;text-align:center;}
+
+  /* LIGHTBOX */
+  .lightbox{
+    position:fixed; inset:0; background:rgba(8,12,11,.94); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:2rem;
+    opacity:0; visibility:hidden; transition:opacity .25s;
+  }
+  .lightbox.open{opacity:1; visibility:visible;}
+  .lightbox img{max-width:100%; max-height:90vh; border:1px solid var(--line);}
+  .lightbox-close{
+    position:absolute; top:1.5rem; right:1.5rem; width:42px; height:42px;
+    border:1px solid var(--line); background:transparent; color:var(--ink);
+    font-family:var(--font-mono); font-size:1.2rem; cursor:pointer; transition:.2s;
+  }
+  .lightbox-close:hover{border-color:var(--amber); color:var(--amber);}
+
+  /* PUBLICATIONS */
+  .pub{border:1px solid var(--line);padding:1.4rem 1.6rem;margin-bottom:1rem;background:var(--panel);}
+  .pub .ptag{font-family:var(--font-mono);font-size:.7rem;color:var(--amber);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem;}
+  .pub h4{font-size:1rem;font-weight:500;margin-bottom:.3rem;line-height:1.4;}
+  .pub p{color:var(--muted);font-size:.85rem;}
+
+  /* TWO COL: education / training */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
+  @media (max-width:760px){.two-col{grid-template-columns:1fr;}}
+  .card{border:1px solid var(--line);padding:1.4rem 1.6rem;margin-bottom:1rem;}
+  .card h4{font-size:1rem;margin-bottom:.2rem;}
+  .card .meta{font-family:var(--font-mono);font-size:.72rem;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.4rem;}
+  .card p{color:var(--muted);font-size:.88rem;}
+
+  /* FOOTER / CONTACT */
+  footer{
+    border-top:1px solid var(--line);padding:4rem 1.5rem 3rem;text-align:center;
+  }
+  footer h2{font-size:clamp(1.8rem,5vw,2.8rem);margin-bottom:1rem;}
+  footer p{color:var(--muted);margin-bottom:2rem;}
+  .contact-links{display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap;font-family:var(--font-mono);font-size:.85rem;}
+  .contact-links a{color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:.2rem;transition:.2s;}
+  .contact-links a:hover{color:var(--amber);border-color:var(--amber);}
+  .copyright{margin-top:3rem;font-family:var(--font-mono);font-size:.7rem;color:var(--muted);letter-spacing:.05em;}
+
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
+</style>
+</head>
+<body>
+<div class="contours"></div>
+
+<nav>
+  <div class="brand">T<span>·</span>RAHMAN</div>
+  <ul>
+    <li><a href="#about">About</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#fieldwork">Field & UAV</a></li>
+    <li><a href="#publications">Publications</a></li>
+    <li><a href="#education">Education</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="coords">23.8103° N, 90.4125° E — DHAKA, BANGLADESH</div>
+  <div class="hero-grid">
+    <div>
+      <div class="role">GIS &amp; Geospatial Analyst — Spatial Ecology &amp; Remote Sensing</div>
+      <h1>Toufiqur <span class="accent">Rahman</span></h1>
+      <p class="lead">I turn field surveys, satellite imagery and species records into spatial evidence — mapping species distributions, EOO/AOO boundaries and land-cover change across Bangladesh's haors, coasts and croplands.</p>
+      <div class="cta-row">
+        <a class="btn primary" href="mailto:toufiqur.49@geography-juniv.edu.bd">Get in Touch</a>
+        <a class="btn" href="#experience">View Experience</a>
+        <a class="btn" href="#publications">Publications</a>
+      </div>
+    </div>
+    <div class="photo-frame">
+      <div class="crosshair"></div>
+      <img src="images/profile.jpg" alt="Toufiqur Rahman">
+      <div class="tag">Profile — Toufiqur Rahman</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">2+ yrs</div><div class="lbl">GIS & Spatial Analysis</div></div>
+    <div class="stat"><div class="num">4</div><div class="lbl">Published Papers</div></div>
+    <div class="stat"><div class="num">3</div><div class="lbl">Research Projects Led</div></div>
+    <div class="stat"><div class="num">15+</div><div class="lbl">Tools & Models Mastered</div></div>
+  </div>
+</header>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="eyebrow">001 — Profile</div>
+  <h2 class="section-title">Mapping <span>species, land &amp; landscapes</span></h2>
+  <div class="about-grid">
+    <div>
+      <p>I'm a GIS professional based in Dhaka with over two years of experience across <strong>spatial data analysis, field surveys and biodiversity-focused mapping</strong>. My work bridges raw field data — GPS points, Kobo forms, drone footage — with satellite imagery to produce evidence that holds up in research and policy contexts.</p>
+      <p>I specialise in <strong>species distribution mapping, EOO &amp; AOO analysis aligned with IUCN Red List standards</strong>, and habitat suitability modelling using MaxEnt, Random Forest and deep learning approaches (CNN, RNN, CA-Markov). I've applied this across haor ecosystems, coastal agriculture and urban land zoning.</p>
+    </div>
+    <div>
+      <p>Currently an <strong>Assistant GIS Analyst at Sheltech Consultants</strong>, supporting field-level spatial data collection for the UDD Land Zoning Project. Previously, I worked across UNDP-funded haor resilience research, precision agriculture, and biodiversity surveys in Sylhet, Kishoreganj, Sunamganj and Cox's Bazar.</p>
+      <blockquote>Good geospatial work starts in the field — a coordinate is only as accurate as the survey that recorded it.</blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="eyebrow">002 — Legend</div>
+  <h2 class="section-title">Core <span>competencies</span></h2>
+  <div class="legend">
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:#d9a544;"></div>
+      <div>
+        <h4>Species Distribution &amp; Spatial Analysis</h4>
+        <p>Species distribution mapping (digitisation, MaxEnt, Random Forest); EOO &amp; AOO analysis; habitat suitability, threat mapping and spatial modelling for biodiversity assessment; Red List geospatial criteria.</p>
+        <div class="tools">MaxEnt · Random Forest · EOO/AOO · Habitat Modelling</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:#5fb3a3;"></div>
+      <div>
+        <h4>Remote Sensing &amp; GIS Tools</h4>
+        <p>Satellite (Landsat, Sentinel, Copernicus) and UAV data analysis, NDVI / GLI / NGRDI indices, LULC classification and change detection. Machine &amp; deep learning: RF, CHM, DTM, MaxEnt, CA-Markov, CNN, RNN.</p>
+        <div class="tools">ArcGIS · Google Earth Engine · Python · QGIS</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:#8a9a90;"></div>
+      <div>
+        <h4>Geospatial Data Management &amp; QA/QC</h4>
+        <p>Spatial database design, metadata standardisation and structuring; data cleaning, validation, QC and version management; multi-source, multi-format integration (vector, raster, GeoTIFF, GeoJSON, KML).</p>
+        <div class="tools">Spatial Databases · Metadata · QA/QC</div>
+      </div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-swatch" style="background:#c2783c;"></div>
+      <div>
+        <h4>Field Integration, Coordination &amp; Reporting</h4>
+        <p>GPS-based surveys, Kobo data collection, georeferencing of records, technical reporting, map outputs, dashboards and data visualisation, stakeholder coordination and workshop support.</p>
+        <div class="tools">Kobo Collect · GPS · Dashboards · MS Office</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="eyebrow">003 — Timeline</div>
+  <h2 class="section-title">Professional <span>experience</span></h2>
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="when">May 2026 — Present</div>
+      <h3>Assistant GIS Analyst</h3>
+      <div class="org">Sheltech Consultants (Pvt.) Ltd. · Dhaka, Bangladesh</div>
+      <ul>
+        <li>Supporting field-level spatial data collection and documentation aligned with UDD Land Zoning Project deliverables.</li>
+        <li>Coordinating with project teams to ensure quality and completeness of field data and reporting outputs.</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="when">Jul 2025 — Dec 2025</div>
+      <h3>Interdisciplinary GIS Analyst</h3>
+      <div class="org">UNDP-Funded Flood &amp; Haor Resilience Project, Dept. of Zoology, Jahangirnagar University</div>
+      <ul>
+        <li>Created and managed geo-referenced spatial databases using GPS and GIS tools for haor ecosystems in Sylhet, Kishoreganj and Sunamganj.</li>
+        <li>Supported habitat and ecosystem-related spatial analysis integrating biological (benthos, zooplankton, phytoplankton) and environmental datasets.</li>
+        <li>Produced cartographic outputs and spatial visualisations for environmental reporting.</li>
+        <li>Maintained structured spatial datasets, ensuring data organisation and metadata consistency.</li>
+        <li>Coordinated research teams and stakeholders to support integrated environmental assessments.</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="when">Jul 2023 — Feb 2026</div>
+      <h3>Research Associate (Part-time)</h3>
+      <div class="org">Center for Precision Agriculture (CPA)</div>
+      <ul>
+        <li>Developed GIS workflows integrating GPS field data, satellite imagery and environmental datasets.</li>
+        <li>Produced species-relevant spatial outputs and distribution maps supporting agricultural research.</li>
+        <li>Performed geospatial data cleaning, validation and QA/QC, ensuring accuracy of spatial databases.</li>
+        <li>Generated high-quality maps, figures and technical outputs for reports and publications.</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="when">Apr 2023 — Aug 2025</div>
+      <h3>Research Student</h3>
+      <div class="org">Department of Geography &amp; Environment, Jahangirnagar University</div>
+      <ul>
+        <li>Conducted geo-referenced field surveys and integrated multi-ecosystem spatial datasets into GIS &amp; GEE.</li>
+        <li>Developed species distribution models using DSM, DTM, CHM and Random Forest approaches.</li>
+        <li>Processed multi-temporal satellite imagery for LULC change detection and indices (NDVI, GLI, NGRDI).</li>
+        <li>Applied spatial ML/DL models (CA-Markov, MaxEnt, CNN, RNN) for environmental and distribution modelling.</li>
+        <li>Analysed and integrated large-scale spatial datasets (NetCDF, IBTrACS, WorldClim, EDGAR).</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="when">Aug 2024 — Sep 2025</div>
+      <h3>GIS &amp; Remote Sensing Instructor</h3>
+      <div class="org">GIS Club, Jahangirnagar University</div>
+      <ul>
+        <li>Guided students in digitisation, satellite data interpretation, GIS-based spatial analysis and mapping.</li>
+      </ul>
+    </div>
+    <div class="tl-item">
+      <div class="when">Jun 2023 — Jun 2024</div>
+      <h3>Geography Teacher</h3>
+      <div class="org">Tori School, Savar, Dhaka</div>
+      <ul>
+        <li>Taught underprivileged primary and secondary students.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FIELDWORK & UAV -->
+<section id="fieldwork">
+  <div class="eyebrow">004 — Ground Truth</div>
+  <h2 class="section-title">Field surveys &amp; <span>UAV operations</span></h2>
+  <p style="color:var(--muted); max-width:60ch; margin-bottom:2rem;">Spatial models are only as good as the data behind them — here's a look at the survey and drone work that feeds my GIS outputs, from haor ecosystems to coastal cropland.</p>
+
+  <div class="slider" id="fwSlider">
+    <div class="slider-track" id="fwTrack">
+      <div class="slide"><img src="images/uav.jpg" alt="UAV piloting in the field" data-full="images/uav.jpg"><div class="crosshair"></div><div class="cap">UAV Piloting — Field Survey</div></div>
+      <div class="slide"><img src="images/fieldwork-1.jpg" alt="Fieldwork photo 1" data-full="images/fieldwork-1.jpg"><div class="crosshair"></div><div class="cap">Fieldwork — GPS &amp; Ground Survey</div></div>
+      <div class="slide"><img src="images/fieldwork-2.jpg" alt="Fieldwork photo 2" data-full="images/fieldwork-2.jpg"><div class="crosshair"></div><div class="cap">Fieldwork — Habitat Survey</div></div>
+      <div class="slide"><img src="images/fieldwork-3.jpg" alt="Fieldwork photo 3" data-full="images/fieldwork-3.jpg"><div class="crosshair"></div><div class="cap">Fieldwork — Data Collection</div></div>
+      <div class="slide"><img src="images/fieldwork-4.jpg" alt="Fieldwork photo 4" data-full="images/fieldwork-4.jpg"><div class="crosshair"></div><div class="cap">Fieldwork — Site Visit</div></div>
+    </div>
+    <button class="slider-arrow prev" id="fwPrev" aria-label="Previous photo">‹</button>
+    <button class="slider-arrow next" id="fwNext" aria-label="Next photo">›</button>
+  </div>
+  <div class="slider-dots" id="fwDots"></div>
+  <div class="scroll-hint">click a photo to enlarge · use arrows or swipe to browse</div>
+
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lbClose" aria-label="Close">✕</button>
+    <img id="lbImg" src="" alt="Enlarged photo">
+  </div>
+</section>
+
+<!-- PUBLICATIONS -->
+<section id="publications">
+  <div class="eyebrow">005 — Research Output</div>
+  <h2 class="section-title">Publications</h2>
+
+  <div class="pub">
+    <div class="ptag">Journal Article · 2025</div>
+    <h4>Mapping Biodiversity Shifts Across Landscape Elevations: UAV-Based Cross-Sectional Mapping of Species Distribution</h4>
+    <p>Hozaifa, S. M., Rahman, T., Kanij, J., Ferdous, M., Aunkur, M. M. M., &amp; Mollah, T. H. — Jahangirnagar University Social Science Shomikkha, 8, 95–101. ISSN 2309-6934</p>
+  </div>
+  <div class="pub">
+    <div class="ptag">Journal Article · 2025</div>
+    <h4>UAV-based Methods for Detailed Individual Species Detection: Challenges and Opportunities</h4>
+    <p>Rahman, T., Kanij, J., Hozaifa, S. M., Ferdous, M., Aunkur, M. M. M., &amp; Mollah, T. H. — Jahangirnagar Bishwavidyalay Bhugol O Paribesh Samikkhan (A Journal of Geography), 42, 33–45. ISSN 1027-8567</p>
+  </div>
+  <div class="pub">
+    <div class="ptag">Journal Article · 2024</div>
+    <h4>MaxEnt-Driven Predictions of Coastal Climate Impacts on Agriculture for Policy Strategies in Bangladesh</h4>
+    <p>Hozaifa, S. M., Rahman, T., Kanij, J., Aunkur, M. M. M., Ferdous, M., &amp; Mollah, T. H. — Jahangirnagar Bishwavidyalay Bhugol O Paribesh Samikkhan (A Journal of Geography), 43(2), 59–71. ISSN 1027-8567</p>
+  </div>
+  <div class="pub">
+    <div class="ptag">Journal Article · 2024</div>
+    <h4>GIS and Remote Sensing for Agricultural Land Administration: A CA-Markov Based Study on Munshiganj Sadar, Bangladesh</h4>
+    <p>Mollah, T. H., Ferdous, M., Aunkur, M. M. M., Hozaifa, S. M., Rahman, T., &amp; Kanij, J. — The Jahangirnagar Review (Social Science), 49. ISSN 1682-7122</p>
+  </div>
+</section>
+
+<!-- EDUCATION & TRAINING -->
+<section id="education">
+  <div class="eyebrow">006 — Foundations</div>
+  <h2 class="section-title">Education &amp; <span>training</span></h2>
+  <div class="two-col">
+    <div>
+      <h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--teal);">Education</h3>
+      <div class="card">
+        <div class="meta">2025 – Present</div>
+        <h4>MSc in Geography &amp; Environment</h4>
+        <p>Jahangirnagar University, Savar, Dhaka — examinations completed February 2026, result awaited.</p>
+      </div>
+      <div class="card">
+        <div class="meta">2020 – 2025 · CGPA 3.60/4.00</div>
+        <h4>BSc in Geography &amp; Environment</h4>
+        <p>Jahangirnagar University, Savar, Dhaka. Coursework: Environmental Research Methods &amp; Modeling, Ecology, Biodiversity, Fieldwork Techniques, GIS &amp; Remote Sensing, Spatial Analysis.</p>
+        <p style="margin-top:.6rem;"><em>Undergraduate report:</em> Climate-Smart Agriculture Assessment for Boro Rice Production in Cox's Bazar Using RNN-LSTM and MaxEnt-Based Suitability Mapping.</p>
+      </div>
+      <h3 style="margin:2rem 0 1rem; font-size:1.1rem; color:var(--teal);">Leadership &amp; Volunteering</h3>
+      <div class="card">
+        <div class="meta">May 2020 – Jul 2023</div>
+        <h4>Program Secretary — Geography Debating Club</h4>
+        <p>Jahangirnagar University. Led weekly sessions and workshops; organised 1 national and 2 intra-university debate competitions.</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--teal);">Selected Training &amp; Certifications</h3>
+      <div class="card">
+        <div class="meta">Mar 2026</div>
+        <h4>Introduction to Mapping Biodiversity Priorities</h4>
+        <p>IUCN Academy</p>
+      </div>
+      <div class="card">
+        <div class="meta">Mar 2026</div>
+        <h4>The Red List of Ecosystems (Specialised Course)</h4>
+        <p>IUCN Academy</p>
+      </div>
+      <div class="card">
+        <div class="meta">Oct 2025</div>
+        <h4>Getting Started with Spatial Analysis</h4>
+        <p>Esri</p>
+      </div>
+      <div class="card">
+        <div class="meta">Aug 2025</div>
+        <h4>Fundamentals of Remote Sensing</h4>
+        <p>NASA ARSET</p>
+      </div>
+      <div class="card">
+        <div class="meta">Nov 2024</div>
+        <h4>Data Science Using Python</h4>
+        <p>Department of Geography &amp; Environment, Jahangirnagar University</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<footer id="contact">
+  <div class="eyebrow" style="justify-content:center;">007 — Coordinates</div>
+  <h2>Let's map something together</h2>
+  <p>Open to GIS, remote sensing and spatial ecology roles &amp; collaborations across Bangladesh and beyond.</p>
+  <div class="contact-links">
+    <a href="mailto:toufiqur.49@geography-juniv.edu.bd">toufiqur.49@geography-juniv.edu.bd</a>
+    <a href="tel:+8801745859444">+880 1745 859444</a>
+    <a href="#" target="_blank">LinkedIn</a>
+    <a href="#" target="_blank">ResearchGate</a>
+  </div>
+  <div class="copyright">© 2026 Toufiqur Rahman · Dhaka, Bangladesh</div>
+</footer>
+
+<script>
+  // Fieldwork slider
+  const track = document.getElementById('fwTrack');
+  const slides = track.querySelectorAll('.slide');
+  const dotsWrap = document.getElementById('fwDots');
+  let current = 0, autoTimer;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    if (i === 0) dot.classList.add('active');
+    dot.setAttribute('aria-label', 'Go to photo ' + (i+1));
+    dot.addEventListener('click', () => goTo(i));
+    dotsWrap.appendChild(dot);
+  });
+  const dots = dotsWrap.querySelectorAll('button');
+
+  function goTo(i){
+    current = (i + slides.length) % slides.length;
+    track.style.transform = `translateX(-${current * 100}%)`;
+    dots.forEach((d, idx) => d.classList.toggle('active', idx === current));
+  }
+  function startAuto(){ autoTimer = setInterval(() => goTo(current + 1), 5000); }
+  function stopAuto(){ clearInterval(autoTimer); }
+
+  document.getElementById('fwPrev').addEventListener('click', () => { goTo(current - 1); stopAuto(); startAuto(); });
+  document.getElementById('fwNext').addEventListener('click', () => { goTo(current + 1); stopAuto(); startAuto(); });
+  startAuto();
+
+  // Pause autoplay on hover
+  const sliderEl = document.getElementById('fwSlider');
+  sliderEl.addEventListener('mouseenter', stopAuto);
+  sliderEl.addEventListener('mouseleave', startAuto);
+
+  // Swipe support
+  let touchStartX = 0;
+  sliderEl.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+  sliderEl.addEventListener('touchend', e => {
+    const diff = e.changedTouches[0].clientX - touchStartX;
+    if (diff > 50) { goTo(current - 1); stopAuto(); startAuto(); }
+    else if (diff < -50) { goTo(current + 1); stopAuto(); startAuto(); }
+  });
+
+  // Lightbox
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lbImg');
+  document.querySelectorAll('.slide img').forEach(img => {
+    img.addEventListener('click', () => {
+      lbImg.src = img.dataset.full;
+      lightbox.classList.add('open');
+      stopAuto();
+    });
+  });
+  function closeLightbox(){ lightbox.classList.remove('open'); startAuto(); }
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+</body>
+</html>
